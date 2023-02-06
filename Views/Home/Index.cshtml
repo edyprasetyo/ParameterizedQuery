@@ -1,0 +1,51 @@
+﻿<div class="row mt-5">
+  <div class="col-6 justify-content-center d-flex align-items-center">
+    <div class="form-floating" style="width:100%;">
+      <textarea class="form-control" onpaste="onPasteQuery();" id="txtQuery" style="height: 500px; width: 100%;"></textarea>
+      <label for="floatingTextarea2">Query</label>
+    </div>
+  </div>
+  <div class="col-6 justify-content-center d-flex align-items-center">
+    <div class="form-floating" style="width:100%;">
+      <textarea class="form-control" id="txtResult" style="height: 500px; width: 100%;"></textarea>
+      <label for="floatingTextarea2">Parameterized</label>
+    </div>
+  </div>
+</div>
+<script>
+  function onPasteQuery() {
+    setTimeout(() => {
+      var query = document.getElementById("txtQuery").value;
+      let input = query;
+      let outputQuery = input.split("||")[0];
+      let outputParam = "return MdlDtl.RetrieveListDictionaryQuery(q";
+      if (!input.includes("||")) {
+        alert("mohon tambah split");
+        return;
+      }
+      let paramsQuery = input.split("||")[1].split(/\r?\n/);
+      let i = 0;
+      for (let o of paramsQuery) {
+        if (o.trim() === "" || o.trim().includes("return")) {
+          continue;
+        }
+        let param = "";
+        if (o.includes("'{0}'")) {
+          param = o.replace("q = q.Replace(\"", "").replace("\", string.Format(\"'{0}'\"", "").replace("));", "").trim();
+        } else if (o.includes("{0}")) {
+          param = o.replace("q = q.Replace(\"", "").replace("\", string.Format(\"{0}\"", "").replace("));", "").trim();
+        } else {
+          param = o.replace("q = q.Replace(\"", "").replace("\"", "").replace(");", "").trim();
+        }
+        let paramSplit = param.split(",");
+        outputQuery = outputQuery.replace("'" + paramSplit[0].trim() + "'", "@("@")" + i.toString());
+        outputQuery = outputQuery.replace(paramSplit[0].trim(), "@("@")" + i.toString());
+        outputParam += "\r\n" + "," + paramSplit[1].trim();
+        i++;
+      }
+      var output = outputQuery + "\r\n" + outputParam + ");";
+      navigator.clipboard.writeText(output);
+      document.getElementById("txtResult").value = output;
+    }, 500);
+  }
+</script>
